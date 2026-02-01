@@ -21,22 +21,20 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build in Raspberry Pi OS container
+      - name: Build in Debian container
         uses: addnab/docker-run-action@v3
         with:
-          image: raspbian/buster
+          image: debian:bullseye
           options: -v ${{ github.workspace }}:/workspace
           run: |
             apt-get update
-            apt-get install -y build-essential debhelper dkms raspberrypi-kernel-headers
+            apt-get install -y build-essential debhelper dkms device-tree-compiler wget
+            # Download Raspberry Pi kernel headers (example for 5.10)
+            wget -qO- https://archive.raspberrypi.org/debian/pool/main/r/raspberrypi-firmware/raspberrypi-kernel-headers_1.20230405-1_armhf.deb > headers.deb
+            dpkg -i headers.deb || true
             cd /workspace
+            dtc -@ -I dts -O dtb -o pico-spi.dtbo pico-spi-overlay.dts
             dpkg-buildpackage -us -uc
-
-      - name: Compile Device Tree Overlay
-        run: |
-          apt-get update && apt-get install -y device-tree-compiler
-          dtc -@ -I dts -O dtb -o pico-spi.dtbo pico-spi-overlay.dts
-        working-directory: ${{ github.workspace }}
 
       - name: Upload built packages
         uses: actions/upload-artifact@v4
