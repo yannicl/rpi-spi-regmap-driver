@@ -42,30 +42,39 @@ jobs:
           apt-get install -y gcc-arm-linux-gnueabihf make bc bison flex libssl-dev device-tree-compiler wget
 
       - name: Download Raspberry Pi kernel source
+        id: kernel_source
         run: |
           export KERNEL_VERSION=6.1.21
           wget https://github.com/raspberrypi/linux/archive/refs/tags/raspberrypi-kernel_${KERNEL_VERSION}.tar.gz -O kernel.tar.gz
           tar xzf kernel.tar.gz
           mv linux-raspberrypi-kernel_${KERNEL_VERSION} rpi-linux
 
-      - name: Build Device Tree Overlay
-        run: |
-          dtc -@ -I dts -O dtb -o pico-spi.dtbo pico-spi-overlay.dts
-        working-directory: ${{ github.workspace }}
+      # Use ${{ github.workspace }}/rpi-linux as the kernel source for all build steps
 
-      - name: Cross-compile kernel module
+      - name: Copy sources for packaging
         run: |
-          export KERNEL_VERSION=6.1.21
+          mkdir -p deb-src/usr/src/pico-spi
+          cp pico_spi.c Makefile pico-spi-overlay.dts deb-src/usr/src/pico-spi/
+
+      - name: Compile Device Tree Overlay for packaging
+        run: |
+          dtc -@ -I dts -O dtb -o deb-src/usr/src/pico-spi/pico-spi.dtbo deb-src/usr/src/pico-spi/pico-spi-overlay.dts
+
+      - name: Cross-compile kernel module for packaging
+        run: |
           export KERNEL_SRC=${{ github.workspace }}/rpi-linux
           export ARCH=arm
           export CROSS_COMPILE=arm-linux-gnueabihf-
-          make -C $KERNEL_SRC M=${{ github.workspace }} ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE modules
+          make -C $KERNEL_SRC M=${{ github.workspace }}/deb-src/usr/src/pico-spi ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE modules
         working-directory: ${{ github.workspace }}
 
-      - name: Package artifacts
+      - name: Package sources as deb
+        run: |
+          cd deb-src
+          tar czf ../pico-spi-src.tar.gz .
+
+      - name: Upload source package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: rpi-artifacts
-          path: |
-            pico_spi.ko
-            pico-spi.dtbo
+          name: pico-spi-source
+          path: pico-spi-src.tar.gz

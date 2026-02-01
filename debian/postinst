@@ -4,15 +4,17 @@ set -e
 KVER=$(uname -r)
 MODDIR="/lib/modules/$KVER/kernel/drivers/spi/"
 OVERLAYDIR="/boot/overlays"
-
-# Install kernel module
-install -m 644 pico_spi.ko "$MODDIR/"
-depmod "$KVER"
+SRCDIR="/usr/src/pico-spi"
 
 # Install device tree overlay
-if [ -f pico-spi.dtbo ]; then
-    install -m 644 pico-spi.dtbo "$OVERLAYDIR/"
+if [ -f "$SRCDIR/pico-spi.dtbo" ]; then
+    install -m 644 "$SRCDIR/pico-spi.dtbo" "$OVERLAYDIR/"
 fi
+
+# Build and install kernel module
+make -C /lib/modules/$KVER/build M="$SRCDIR" modules
+install -m 644 "$SRCDIR/pico_spi.ko" "$MODDIR/"
+depmod "$KVER"
 
 # Autoload module at boot
 if ! grep -q '^pico_spi$' /etc/modules-load.d/pico_spi.conf 2>/dev/null; then
