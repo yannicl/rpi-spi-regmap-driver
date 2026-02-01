@@ -36,8 +36,36 @@ jobs:
             dtc -@ -I dts -O dtb -o pico-spi.dtbo pico-spi-overlay.dts
             dpkg-buildpackage -us -uc
 
-      - name: Upload built packages
+      - name: Install cross-compiler and tools
+        run: |
+          apt-get update
+          apt-get install -y gcc-arm-linux-gnueabihf make bc bison flex libssl-dev device-tree-compiler wget
+
+      - name: Download Raspberry Pi kernel source
+        run: |
+          export KERNEL_VERSION=6.1.21
+          wget https://github.com/raspberrypi/linux/archive/refs/tags/raspberrypi-kernel_${KERNEL_VERSION}.tar.gz -O kernel.tar.gz
+          tar xzf kernel.tar.gz
+          mv linux-raspberrypi-kernel_${KERNEL_VERSION} rpi-linux
+
+      - name: Build Device Tree Overlay
+        run: |
+          dtc -@ -I dts -O dtb -o pico-spi.dtbo pico-spi-overlay.dts
+        working-directory: ${{ github.workspace }}
+
+      - name: Cross-compile kernel module
+        run: |
+          export KERNEL_VERSION=6.1.21
+          export KERNEL_SRC=${{ github.workspace }}/rpi-linux
+          export ARCH=arm
+          export CROSS_COMPILE=arm-linux-gnueabihf-
+          make -C $KERNEL_SRC M=${{ github.workspace }} ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE modules
+        working-directory: ${{ github.workspace }}
+
+      - name: Package artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: debian-packages
-          path: ../*.deb
+          name: rpi-artifacts
+          path: |
+            pico_spi.ko
+            pico-spi.dtbo
