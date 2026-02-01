@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+KVER=$(uname -r)
+MODDIR="/lib/modules/$KVER/kernel/drivers/spi/"
+OVERLAYDIR="/boot/overlays"
+
+# Remove kernel module
+rm -f "$MODDIR/pico_spi.ko"
+depmod "$KVER"
+
+# Remove device tree overlay
+rm -f "$OVERLAYDIR/pico-spi.dtbo"
+
+# Remove autoload config
+rm -f /etc/modules-load.d/pico_spi.conf
+
+exit 0

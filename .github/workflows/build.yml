@@ -1,0 +1,45 @@
+name: Build DKMS APT Package
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU for ARM
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm,arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build in Raspberry Pi OS container
+        uses: addnab/docker-run-action@v3
+        with:
+          image: raspbian/buster
+          options: -v ${{ github.workspace }}:/workspace
+          run: |
+            apt-get update
+            apt-get install -y build-essential debhelper dkms raspberrypi-kernel-headers
+            cd /workspace
+            dpkg-buildpackage -us -uc
+
+      - name: Compile Device Tree Overlay
+        run: |
+          apt-get update && apt-get install -y device-tree-compiler
+          dtc -@ -I dts -O dtb -o pico-spi.dtbo pico-spi-overlay.dts
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload built packages
+        uses: actions/upload-artifact@v3
+        with:
+          name: debian-packages
+          path: ../*.deb

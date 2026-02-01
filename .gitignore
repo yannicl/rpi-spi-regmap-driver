@@ -1,0 +1,27 @@
+# Ignore build artifacts
+*.o
+*.ko
+*.mod.c
+*.order
+*.symvers
+*.cmd
+modules.order
+Module.symvers
+.deps/
+*.tmp
+*.bak
+*.swp
+*.d
+*.dtb
+
+# Ignore debian build
+/debian/*.deb
+/debian/tmp/
+/debian/*.build
+/debian/*.changes
+/debian/*.dsc
+/debian/*.tar.*
+
+# Ignore editor files
+*~
+*.vscode/

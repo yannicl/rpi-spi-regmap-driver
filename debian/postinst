@@ -1,0 +1,22 @@
+#!/bin/sh
+set -e
+
+KVER=$(uname -r)
+MODDIR="/lib/modules/$KVER/kernel/drivers/spi/"
+OVERLAYDIR="/boot/overlays"
+
+# Install kernel module
+install -m 644 pico_spi.ko "$MODDIR/"
+depmod "$KVER"
+
+# Install device tree overlay
+if [ -f pico-spi.dtbo ]; then
+    install -m 644 pico-spi.dtbo "$OVERLAYDIR/"
+fi
+
+# Autoload module at boot
+if ! grep -q '^pico_spi$' /etc/modules-load.d/pico_spi.conf 2>/dev/null; then
+    echo pico_spi | tee /etc/modules-load.d/pico_spi.conf
+fi
+
+exit 0

@@ -1,76 +1,73 @@
-6. Build the module
+# Pico SPI Regmap Driver
+
+An open-source Linux kernel module providing a regmap-based SPI driver for the Raspberry Pi (tested with Pico as peripheral). This project enables easy register access to SPI devices using the Linux regmap API.
+
+## Features
+- Linux kernel SPI driver with regmap support
+- Device Tree overlay for easy binding
+- Sysfs interface for register access
+- Example for Raspberry Pi Pico as SPI peripheral
+
+## Getting Started
+
+### Prerequisites
+- Raspberry Pi with SPI enabled
+- Kernel headers matching your running kernel
+- Build tools: `make`, `gcc`, etc.
+
+### Build the Driver
+```sh
 make
+```
+If successful, this produces `pico_spi.ko`.
 
+### Compile the overlay (.dtbo)
+```sh
+dtc -@ -I dts -O dtb -o pico-spi.dtbo pico-spi-overlay.dts
+```
 
-Success output:
+### Install the overlay
+```sh
+sudo cp pico-spi.dtbo /boot/overlays/
+echo "dtoverlay=pico-spi" | sudo tee -a /boot/config.txt
+sudo reboot
+```
 
-  CC [M]  /home/pi/pico_spi_driver/pico_spi.o
-  LD [M]  /home/pi/pico_spi_driver/pico_spi.ko
+### Enable the overlay in /boot/config.txt
+sudo nano /boot/config.txt
 
-
-If you see pico_spi.ko → build succeeded.
-
-7. Load the driver
-Insert module
+### Load the Driver
+```sh
 sudo insmod pico_spi.ko
-
-Check kernel log
 dmesg | tail
+# Should see: pico-spi spi0.0: Pico SPI regmap driver loaded
+```
 
-
-Expected:
-
-pico-spi spi0.0: Pico SPI regmap driver loaded
-
-8. Verify device binding
+### Verify Device Binding
+```sh
 ls /sys/bus/spi/devices/
-
-
-You should see:
-
-spi0.0
-
-
-Check driver:
-
+# Should show: spi0.0
 ls -l /sys/bus/spi/devices/spi0.0/driver
+```
 
-9. Unload / reload during development
+### Unload/Reload During Development
+```sh
 sudo rmmod pico_spi
 sudo insmod pico_spi.ko
+```
 
-10. Common build errors & fixes
-❌ fatal error: linux/spi/spi.h: No such file
-
-➡ Kernel headers missing or mismatched
-➡ Reinstall headers
-
-❌ invalid module format
-
-➡ Kernel version mismatch
-➡ uname -r ≠ headers
-
-❌ Driver loads but probe() not called
-Cause	Fix
-Wrong compatible	Match DT overlay
-spidev bound	Remove spidev
-SPI disabled	Enable SPI in config.txt
-
-11. Autoload at boot (optional)
-sudo cp pico_spi.ko /lib/modules/$(uname -r)/extra/
-sudo depmod
-
-Add:
-
+### Autoload at Boot (Optional)
+```sh
+sudo cp pico_spi.ko /lib/modules/$(uname -r)/kernel/drivers/spi/
+sudo depmod -a
 echo pico_spi | sudo tee /etc/modules-load.d/pico_spi.conf
+```
 
-12. Debugging tips
+## Device Tree Overlay
+See `pico-spi-overlay.dts` for an example overlay to bind the driver.
 
-Enable dynamic debug:
+## Contributing
+No contribution wanted. This work is given as is.
 
-echo 'module pico_spi +p' | sudo tee /sys/kernel/debug/dynamic_debug/control
-
-
-SPI bus visibility:
-
-ls /sys/class/spi_master/
+## License
+GPL v2. See LICENSE file.
