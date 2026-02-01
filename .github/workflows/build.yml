@@ -28,13 +28,9 @@ jobs:
           options: -v ${{ github.workspace }}:/workspace
           run: |
             apt-get update
-            apt-get install -y build-essential debhelper dkms device-tree-compiler wget
-            # Download Raspberry Pi kernel headers (example for 5.10)
-            wget -qO- https://archive.raspberrypi.org/debian/pool/main/r/raspberrypi-firmware/raspberrypi-kernel-headers_1.20230405-1_armhf.deb > headers.deb
-            dpkg -i headers.deb || true
+            apt-get install -y tar
             cd /workspace
-            dtc -@ -I dts -O dtb -o pico-spi.dtbo pico-spi-overlay.dts
-            dpkg-buildpackage -us -uc
+            # No compilation, just packaging sources
 
       - name: Install cross-compiler and tools
         run: |
@@ -55,18 +51,6 @@ jobs:
         run: |
           mkdir -p deb-src/usr/src/pico-spi
           cp pico_spi.c Makefile pico-spi-overlay.dts deb-src/usr/src/pico-spi/
-
-      - name: Compile Device Tree Overlay for packaging
-        run: |
-          dtc -@ -I dts -O dtb -o deb-src/usr/src/pico-spi/pico-spi.dtbo deb-src/usr/src/pico-spi/pico-spi-overlay.dts
-
-      - name: Cross-compile kernel module for packaging
-        run: |
-          export KERNEL_SRC=${{ github.workspace }}/rpi-linux
-          export ARCH=arm
-          export CROSS_COMPILE=arm-linux-gnueabihf-
-          make -C $KERNEL_SRC M=${{ github.workspace }}/deb-src/usr/src/pico-spi ARCH=$ARCH CROSS_COMPILE=$CROSS_COMPILE modules
-        working-directory: ${{ github.workspace }}
 
       - name: Package sources as deb
         run: |

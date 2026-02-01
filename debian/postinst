@@ -6,6 +6,11 @@ MODDIR="/lib/modules/$KVER/kernel/drivers/spi/"
 OVERLAYDIR="/boot/overlays"
 SRCDIR="/usr/src/pico-spi"
 
+# Build device tree overlay
+if [ -f "$SRCDIR/pico-spi-overlay.dts" ]; then
+    dtc -@ -I dts -O dtb -o "$SRCDIR/pico-spi.dtbo" "$SRCDIR/pico-spi-overlay.dts"
+fi
+
 # Install device tree overlay
 if [ -f "$SRCDIR/pico-spi.dtbo" ]; then
     install -m 644 "$SRCDIR/pico-spi.dtbo" "$OVERLAYDIR/"
