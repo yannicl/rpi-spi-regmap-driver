@@ -5,7 +5,6 @@ Maintainer: Yannic Luyckx <your@email.com>
 Build-Depends: debhelper (>= 9), raspberrypi-kernel-headers
 Standards-Version: 4.5.0
 Homepage: https://github.com/yourusername/pico-spi
-
 Package: pico-spi-dkms
 Architecture: all
 Depends: dkms, raspberrypi-kernel-headers
