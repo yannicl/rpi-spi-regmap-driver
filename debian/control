@@ -9,3 +9,4 @@ Package: pico-spi-dkms
 Architecture: all
 Depends: dkms, raspberrypi-kernel-headers
 Description: Regmap-based SPI driver for Raspberry Pi (DKMS) Kernel module for SPI regmap access, suitable for Raspberry Pi and similar devices.
+Version: 1.0.0-1
