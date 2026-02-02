@@ -13,14 +13,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up QEMU for ARM
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm,arm64
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
       - name: Build in Debian container
         uses: addnab/docker-run-action@v3
         with:
@@ -31,19 +23,6 @@ jobs:
             apt-get install -y tar
             cd /workspace
             # No compilation, just packaging sources
-
-      - name: Install cross-compiler and tools
-        run: |
-          apt-get update
-          apt-get install -y gcc-arm-linux-gnueabihf make bc bison flex libssl-dev device-tree-compiler wget
-
-      - name: Download Raspberry Pi kernel source
-        id: kernel_source
-        run: |
-          export KERNEL_VERSION=6.1.21
-          wget https://github.com/raspberrypi/linux/archive/refs/tags/raspberrypi-kernel_${KERNEL_VERSION}.tar.gz -O kernel.tar.gz
-          tar xzf kernel.tar.gz
-          mv linux-raspberrypi-kernel_${KERNEL_VERSION} rpi-linux
 
       # Use ${{ github.workspace }}/rpi-linux as the kernel source for all build steps
 
