@@ -13,31 +13,29 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Build in Debian container
-        uses: addnab/docker-run-action@v3
-        with:
-          image: debian:bullseye
-          options: -v ${{ github.workspace }}:/workspace
-          run: |
-            apt-get update
-            apt-get install -y tar
-            cd /workspace
-            # No compilation, just packaging sources
-
-      # Use ${{ github.workspace }}/rpi-linux as the kernel source for all build steps
-
-      - name: Copy sources for packaging
+      - name: Build Debian package
         run: |
-          mkdir -p deb-src/usr/src/pico-spi
-          cp pico_spi.c Makefile pico-spi-overlay.dts deb-src/usr/src/pico-spi/
+          # Create package directory structure
+          mkdir -p pico-spi-dkms/DEBIAN
+          mkdir -p pico-spi-dkms/usr/src/pico-spi
+          
+          # Copy source files
+          cp pico_spi.c Makefile pico-spi-overlay.dts pico-spi-dkms/usr/src/pico-spi/
+          
+          # Copy control files
+          cp debian/control pico-spi-dkms/DEBIAN/
+          cp debian/changelog pico-spi-dkms/DEBIAN/
+          cp debian/copyright pico-spi-dkms/DEBIAN/
+          
+          # Copy maintainer scripts if they exist
+          [ -f debian/postinst ] && cp debian/postinst pico-spi-dkms/DEBIAN/ && chmod 755 pico-spi-dkms/DEBIAN/postinst
+          [ -f debian/prerm ] && cp debian/prerm pico-spi-dkms/DEBIAN/ && chmod 755 pico-spi-dkms/DEBIAN/prerm
+          
+          # Build the .deb package
+          dpkg-deb --build pico-spi-dkms pico-spi.deb
 
-      - name: Package sources as deb
-        run: |
-          cd deb-src
-          tar czf ../pico-spi-src.tar.gz .
-
-      - name: Upload source package artifact
+      - name: Upload Debian package artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pico-spi-source
-          path: pico-spi-src.tar.gz
+          name: pico-spi-deb
+          path: pico-spi.deb
